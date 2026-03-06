@@ -13,26 +13,28 @@ import {
   Field,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Form, useZodForm } from "@/components/ui/form";
+import { FormInput, FormPassword } from "@/components/ui/form-field";
 import { useLogin } from "@/hooks/use-auth";
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { loginSchema, type LoginFormData } from "@/schemas";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin123");
   const loginMutation = useLogin();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({ email, password });
+  const form = useZodForm(loginSchema, {
+    email: "admin@example.com",
+    password: "admin123",
+  });
+
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -45,7 +47,7 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <Form form={form} onSubmit={onSubmit}>
             <FieldGroup>
               <Field>
                 <Button variant="outline" type="button" disabled>
@@ -70,21 +72,21 @@ export function LoginForm({
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loginMutation.isPending}
-                />
-              </Field>
+              <FormInput
+                name="email"
+                label="Email"
+                type="email"
+                placeholder="m@example.com"
+                disabled={loginMutation.isPending}
+              />
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Password
+                  </label>
                   <a
                     href="#"
                     className="ml-auto text-sm underline-offset-4 hover:underline"
@@ -96,17 +98,16 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                <FormPassword
+                  name="password"
                   disabled={loginMutation.isPending}
                 />
               </Field>
               <Field>
-                <Button type="submit" disabled={loginMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={loginMutation.isPending || !form.formState.isValid}
+                >
                   {loginMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
@@ -120,7 +121,7 @@ export function LoginForm({
                 Demo credentials pre-filled. Click Login to continue.
               </FieldDescription>
             </FieldGroup>
-          </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

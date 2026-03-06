@@ -9,42 +9,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Form, useZodForm } from "@/components/ui/form";
+import { FormInput, FormPassword } from "@/components/ui/form-field";
 import { useSignup } from "@/hooks/use-auth";
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { signupSchema, type SignupFormData } from "@/schemas";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const signupMutation = useSignup();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useZodForm(signupSchema, {
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-
-    signupMutation.mutate({ name, email, password });
+  const onSubmit = (data: SignupFormData) => {
+    signupMutation.mutate(data);
   };
 
   return (
@@ -57,65 +43,44 @@ export function SignupForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <Form form={form} onSubmit={onSubmit}>
             <FieldGroup>
+              <FormInput
+                name="name"
+                label="Full Name"
+                type="text"
+                placeholder="John Doe"
+                disabled={signupMutation.isPending}
+              />
+              <FormInput
+                name="email"
+                label="Email"
+                type="email"
+                placeholder="m@example.com"
+                disabled={signupMutation.isPending}
+              />
               <Field>
-                <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={signupMutation.isPending}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormPassword
+                    name="password"
+                    label="Password"
+                    placeholder="Enter password"
+                    showStrengthIndicator
+                    disabled={signupMutation.isPending}
+                  />
+                  <FormPassword
+                    name="confirmPassword"
+                    label="Confirm Password"
+                    placeholder="Confirm password"
+                    disabled={signupMutation.isPending}
+                  />
+                </div>
               </Field>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={signupMutation.isPending}
-                />
-              </Field>
-              <Field>
-                <Field className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={signupMutation.isPending}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="confirm-password">
-                      Confirm Password
-                    </FieldLabel>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={signupMutation.isPending}
-                    />
-                  </Field>
-                </Field>
-                <FieldDescription>
-                  Must be at least 8 characters long.
-                </FieldDescription>
-              </Field>
-              <Field>
-                <Button type="submit" disabled={signupMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={signupMutation.isPending || !form.formState.isValid}
+                >
                   {signupMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
@@ -123,12 +88,12 @@ export function SignupForm({
                     ? "Creating account..."
                     : "Create Account"}
                 </Button>
-                <FieldDescription className="text-center">
+                <p className="text-center text-sm text-muted-foreground">
                   Already have an account? <a href="/login">Sign in</a>
-                </FieldDescription>
+                </p>
               </Field>
             </FieldGroup>
-          </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
